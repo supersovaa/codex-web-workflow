@@ -40,6 +40,44 @@ Its job is to:
 - never use `make_pr`;
 - require a real pull-request URL before reporting completion.
 
+## Installing `codex-web-workflow` for Codex web
+
+The copy in this repository is the distribution source.
+
+Codex does not discover `skills/codex-web-workflow/SKILL.md` from this repository while it is working in another repository.
+For a skill that should be available across repositories, install it into:
+
+```text
+$HOME/.agents/skills/codex-web-workflow/SKILL.md
+```
+
+In Codex web, the environment setup can install the current version from this repository:
+
+```sh
+skill_dir="$HOME/.agents/skills/codex-web-workflow"
+
+mkdir -p "$skill_dir"
+
+curl -fsSL \
+  https://raw.githubusercontent.com/supersovaa/codex-web-workflow/main/skills/codex-web-workflow/SKILL.md \
+  -o "$skill_dir/SKILL.md"
+```
+
+This keeps `skills/codex-web-workflow/SKILL.md` as the single source of truth while allowing the skill to continue changing during development.
+New Codex web environments will install the current version from `main`.
+
+Do not maintain a second copy of the skill under this repository's `.agents/skills`.
+
+Before testing branch, push, or pull-request behavior, first verify that Codex can discover the installed skill.
+
+For example:
+
+```text
+Use $codex-web-workflow.
+Do not modify the repository.
+Summarize the pull-request completion rules from the loaded skill.
+```
+
 ## Expected environment
 
 The initial version assumes:
