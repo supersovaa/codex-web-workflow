@@ -56,10 +56,15 @@ After completing and validating the requested changes:
 
 1. Commit the intended changes when needed.
 2. Push the current `HEAD` to the explicitly supplied remote branch.
-3. Create the pull request with GitHub CLI.
-4. Verify that the pull request exists on GitHub.
-5. Obtain its URL.
-6. Include the URL in the final response.
+3. Inspect the final diff and actual verification results.
+4. Generate the PR title and body from that final state.
+5. Create a new pull request or update the existing pull request with GitHub CLI.
+6. Verify that the pull request exists on GitHub and reflects the final diff.
+7. Obtain its URL.
+8. Include the URL in the final response.
+
+The PR title and body must describe the final implementation and actual verification results.
+Do not leave stale descriptions from an earlier plan or intermediate implementation.
 
 Use an explicit push target so the local `work` branch name does not leak into the remote workflow:
 
@@ -67,13 +72,20 @@ Use an explicit push target so the local `work` branch name does not leak into t
 git push -u origin HEAD:<push_branch>
 ```
 
-Create the pull request explicitly with the supplied head and base branches:
+Create a new pull request explicitly with the supplied head and base branches, title, and generated body:
 
 ```sh
-gh pr create --head <push_branch> --base <pr_base>
+gh pr create --head <push_branch> --base <pr_base> --title "<title>" --body-file <body_file>
 ```
 
-Do not report the repository-changing task as complete unless the pull request actually exists and its URL has been obtained.
+If a pull request already exists for the branch, update its body and update its title when needed:
+
+```sh
+gh pr edit <number> --title "<title>" --body-file <body_file>
+```
+
+Generating or printing a PR title/body is not completion.
+Do not report the repository-changing task as complete unless the pull request actually exists, reflects the final diff, and its URL has been obtained.
 
 ## Do not redesign the environment during execution
 
