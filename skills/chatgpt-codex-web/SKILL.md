@@ -1,6 +1,6 @@
 ---
 name: chatgpt-codex-web
-description: Prepare complete Codex web task instructions, including environment prerequisites, explicit branch metadata, and pull-request requirements, so the generated instruction can be pasted into Codex web without rewriting.
+description: Prepare complete Codex web task instructions, including environment prerequisites, branch-resolution rules, and pull-request requirements, so the generated instruction can be pasted into Codex web without rewriting.
 ---
 
 # ChatGPT to Codex web
@@ -32,7 +32,7 @@ When the user asks how to configure the environment, answer from this contract i
 Codex web may check out the working tree on a local branch named `work`.
 The local branch name therefore cannot be used to recover the user's original branch identity.
 
-When branch identity matters, include the relevant branch values explicitly in the generated instruction.
+When branch identity matters and the relevant value is known or user-selected, include it explicitly in the generated instruction.
 Use these concepts:
 
 - `source_branch`: the branch or revision the task is based on;
@@ -45,7 +45,10 @@ Do not tell Codex to infer these values from:
 - `git status`;
 - the local checkout branch name.
 
-If a required branch value is unknown and cannot be derived from information already provided by the user, make the missing value explicit rather than pretending that Codex can recover it later.
+Branch names are optional unless the task requires a specific branch relationship.
+When `pr_base` is omitted, let Codex resolve it from repository-specific governing instructions and then the GitHub default branch.
+When `push_branch` is omitted, let Codex choose a concise task-specific remote branch name.
+Do not ask the user to choose an otherwise optional branch name.
 
 ## Generate a directly executable instruction
 
@@ -55,11 +58,13 @@ Do not require the user to translate explanatory prose into operational steps.
 When repository changes are requested, include all of the following requirements in the Codex instruction:
 
 - Treat the local branch name `work` as an implementation detail.
-- Use the explicitly supplied branch values.
+- Use any explicitly supplied branch values.
+- Resolve an omitted `pr_base` from repository instructions, then the GitHub default branch.
+- Choose a concise task-specific `push_branch` when it is omitted.
 - Never use `make_pr`.
-- Push the current `HEAD` to the explicitly supplied `push_branch`.
+- Push the current `HEAD` to the resolved `push_branch`.
 - Create the pull request with `gh pr create`.
-- Pass `--head <push_branch>` and `--base <pr_base>` explicitly.
+- Pass the resolved `--head <push_branch>` and `--base <pr_base>` explicitly.
 - Do not treat a commit, push, pull-request draft, or generated PR description as completion.
 - Verify that the pull request actually exists on GitHub.
 - Obtain the resulting pull-request URL.

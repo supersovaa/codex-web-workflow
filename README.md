@@ -1,6 +1,6 @@
 # codex-web-workflow
 
-Skills for generating Codex web instructions in ChatGPT and executing them reliably in Codex, with explicit branch and pull request handling.
+Skills for generating Codex web instructions in ChatGPT and executing them reliably in Codex, with explicit pull-request handling and branch resolution independent of the local checkout name.
 
 ## Why this exists
 
@@ -24,7 +24,7 @@ Its job is to:
 
 - define the expected Codex web environment;
 - explain the required `GH_TOKEN` permissions when asked;
-- preserve branch information that Codex web cannot recover later;
+- preserve user-selected branch information that Codex web cannot recover later without requiring optional branch names;
 - generate a complete instruction that can be pasted into Codex web without rewriting.
 
 ### `codex-web-workflow`
@@ -34,8 +34,10 @@ Use this on the Codex side while executing the task.
 Its job is to:
 
 - treat the local `work` branch as an implementation detail;
-- use branch names explicitly supplied in the task;
-- push the current `HEAD` to the requested remote branch;
+- use branch names explicitly supplied in the task when present;
+- resolve an omitted PR base from repository instructions or the GitHub default branch;
+- choose a task-specific remote branch name when none is supplied;
+- push the current `HEAD` to the resolved remote branch;
 - create a real GitHub pull request with `gh pr create`;
 - never use `make_pr`;
 - require a real pull-request URL before reporting completion.
@@ -102,7 +104,12 @@ Instructions generated for Codex should distinguish these values when they matte
 - `pr_base`: the target branch of the pull request;
 - `push_branch`: the remote branch that receives the Codex changes.
 
-Codex must not infer any of them from the local branch name.
+Branch names do not need to be supplied merely to allow PR creation.
+Explicitly supplied values take precedence.
+When `pr_base` is omitted, Codex uses repository-specific governing instructions when available and otherwise the GitHub default branch.
+When `push_branch` is omitted, Codex chooses a concise task-specific remote branch name.
+
+Codex must not infer branch identity from the local branch name.
 
 ## Pull-request completion rule
 

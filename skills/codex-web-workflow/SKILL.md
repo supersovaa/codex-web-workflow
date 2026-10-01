@@ -1,6 +1,6 @@
 ---
 name: codex-web-workflow
-description: Execute repository-changing tasks reliably in Codex web by treating the local work branch as temporary, using explicit branch metadata, pushing with git, and creating a real GitHub pull request with gh instead of make_pr.
+description: Execute repository-changing tasks reliably in Codex web by treating the local work branch as temporary, resolving pull-request branch names independently of it, pushing with git, and creating a real GitHub pull request with gh instead of make_pr.
 ---
 
 # Codex web workflow
@@ -42,8 +42,20 @@ Never infer the original branch identity from:
 - `git status`;
 - the current local branch name.
 
-Use branch names explicitly provided in the task instruction.
-If branch metadata required to create the requested pull request is absent, report the missing metadata instead of guessing.
+Resolve branch names without relying on the local checkout branch.
+
+When the task explicitly provides a branch value, use it.
+
+When the pull-request base is not provided:
+
+1. Use the repository-specific governing instruction when it defines a default pull-request base.
+2. Otherwise use the repository's GitHub default branch.
+
+When the remote push branch is not provided, choose a concise task-specific branch name.
+Do not use `work` merely because it is the local checkout branch.
+Do not ask the user to choose a branch name solely because the task omitted one.
+
+Only report missing branch information when the task requires a specific branch relationship that cannot be resolved from the task, repository instructions, or repository metadata.
 
 ## Pull requests are part of completion
 
@@ -55,7 +67,7 @@ Do not treat PR title/body generation, a commit, or a push as equivalent to crea
 After completing and validating the requested changes:
 
 1. Commit the intended changes when needed.
-2. Push the current `HEAD` to the explicitly supplied remote branch.
+2. Push the current `HEAD` to the resolved remote branch.
 3. Inspect the final diff and actual verification results.
 4. Generate the PR title and body from that final state.
 5. Create a new pull request or update the existing pull request with GitHub CLI.
@@ -72,7 +84,7 @@ Use an explicit push target so the local `work` branch name does not leak into t
 git push -u origin HEAD:<push_branch>
 ```
 
-Create a new pull request explicitly with the supplied head and base branches, title, and generated body:
+Create a new pull request explicitly with the resolved head and base branches, title, and generated body:
 
 ```sh
 gh pr create --head <push_branch> --base <pr_base> --title "<title>" --body-file <body_file>
