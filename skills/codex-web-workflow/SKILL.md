@@ -1,6 +1,6 @@
 ---
 name: codex-web-workflow
-description: Execute repository-changing tasks reliably in Codex web by treating the local work branch as temporary, resolving pull-request branch names independently of it, pushing with git, and creating a real GitHub pull request with gh instead of make_pr.
+description: Execute repository-changing tasks reliably in Codex web by treating the local work branch as temporary, resolving pull-request branch names and the writable Git remote independently of it, pushing with git, and creating a real GitHub pull request with gh instead of make_pr.
 ---
 
 # Codex web workflow
@@ -18,7 +18,7 @@ Assume:
 - The token can access the target repository.
 - The token has `Contents: Read and write`.
 - The token has `Pull requests: Read and write`.
-- The configured Git remote is writable.
+- At least one configured Git remote for the target repository is writable.
 - Network access required for GitHub operations is available.
 
 These are prerequisites, not problems to work around.
@@ -57,6 +57,18 @@ Do not ask the user to choose a branch name solely because the task omitted one.
 
 Only report missing branch information when the task requires a specific branch relationship that cannot be resolved from the task, repository instructions, or repository metadata.
 
+## Resolve the push remote independently
+
+Treat the Git remote name as repository-local configuration, not as a fixed workflow value.
+
+When the task or repository instructions explicitly provide the remote to use, use it.
+Otherwise choose a configured remote whose URL identifies the target GitHub repository and whose push URL is writable.
+If no such remote can be resolved, report the missing writable remote as an unmet prerequisite.
+
+Do not assume that the remote is named `origin`.
+Do not construct the pull-request base from a fixed remote-tracking name such as `origin/<pr_base>`.
+Resolve the pull-request base from repository instructions or GitHub repository metadata as described above.
+
 ## Pull requests are part of completion
 
 For tasks that modify the repository, a real GitHub pull request is part of the definition of done.
@@ -67,7 +79,7 @@ Do not treat PR title/body generation, a commit, or a push as equivalent to crea
 After completing and validating the requested changes:
 
 1. Commit the intended changes when needed.
-2. Push the current `HEAD` to the resolved remote branch.
+2. Push the current `HEAD` to the resolved remote and remote branch.
 3. Inspect the final diff and actual verification results.
 4. Generate the PR title and body from that final state.
 5. Create a new pull request or update the existing pull request with GitHub CLI.
@@ -78,10 +90,10 @@ After completing and validating the requested changes:
 The PR title and body must describe the final implementation and actual verification results.
 Do not leave stale descriptions from an earlier plan or intermediate implementation.
 
-Use an explicit push target so the local `work` branch name does not leak into the remote workflow:
+Use an explicit remote and branch target so neither the local `work` branch name nor a guessed remote name leaks into the remote workflow:
 
 ```sh
-git push -u origin HEAD:<push_branch>
+git push -u <push_remote> HEAD:<push_branch>
 ```
 
 Create a new pull request explicitly with the resolved head and base branches, title, and generated body:
@@ -106,6 +118,7 @@ In particular:
 
 - do not use `make_pr`;
 - do not invent another branch from the local `work` name;
+- do not invent a fixed Git remote name;
 - do not attempt to compensate for missing GitHub permissions by changing the repository contents;
 - do not claim completion when GitHub authentication, push, or pull-request creation failed.
 
