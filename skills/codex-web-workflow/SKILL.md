@@ -29,7 +29,7 @@ Report an unmet prerequisite as soon as it blocks the workflow.
 Codex web may force the local checkout branch name to `work`.
 Treat `work` solely as a local implementation detail.
 
-Resolve semantic branch roles from explicit task values, repository-specific governing instructions, and GitHub repository metadata.
+Resolve semantic branch roles only from explicit task values, repository-specific governing instructions, and GitHub repository metadata.
 
 When the task explicitly provides a branch value, use it.
 
