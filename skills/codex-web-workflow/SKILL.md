@@ -1,6 +1,6 @@
 ---
 name: codex-web-workflow
-description: Execute repository-changing tasks reliably in Codex web by treating the local work branch as temporary, resolving pull-request branch names and the writable Git remote independently, pushing with git, and creating a real GitHub pull request with gh.
+description: Execute repository-changing tasks reliably in Codex web by treating the local work branch as temporary, resolving pull-request branch names and the writable Git remote independently, pushing with git, and using GitHub CLI (`gh`) as the sole pull-request mechanism.
 ---
 
 # Codex web workflow
@@ -92,6 +92,6 @@ Report completion only after the pull request exists on GitHub, reflects the fin
 ## Handle unmet prerequisites
 
 Keep the expected GitHub environment contract and pull-request mechanism fixed during execution.
-Keep repository changes scoped to the requested task and resolve environment blockers through environment configuration.
+Keep repository changes scoped to the requested task.
 Treat authentication failure, insufficient permissions, writable-remote resolution failure, push failure, or pull-request creation failure as execution blockers.
 Report the concrete unmet prerequisite or failed GitHub operation.
