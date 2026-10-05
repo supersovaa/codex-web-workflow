@@ -93,5 +93,5 @@ Report completion only after the pull request exists on GitHub, reflects the fin
 
 Keep the expected GitHub environment contract and pull-request mechanism fixed during execution.
 Keep repository changes scoped to the requested task and resolve environment blockers through environment configuration.
-Treat missing GitHub authentication, required permissions, a writable remote, or successful push or pull-request creation as execution blockers.
+Treat authentication failure, insufficient permissions, writable-remote resolution failure, push failure, or pull-request creation failure as execution blockers.
 Report the concrete unmet prerequisite or failed GitHub operation.
