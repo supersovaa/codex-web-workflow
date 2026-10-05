@@ -27,12 +27,12 @@ If GitHub Actions workflow files must be modified, explain that the environment 
 
 When the user asks how to configure the environment, answer from this contract instead of delegating environment design to Codex.
 
-## Preserve branch information before handoff
+## Preserve branch and remote information before handoff
 
 Codex web may check out the working tree on a local branch named `work`.
 The local branch name therefore cannot be used to recover the user's original branch identity.
 
-When branch identity matters and the relevant value is known or user-selected, include it explicitly in the generated instruction.
+When branch or remote identity matters and the relevant value is known or user-selected, include it explicitly in the generated instruction.
 Use these concepts:
 
 - `source_branch`: the branch or revision the task is based on;
