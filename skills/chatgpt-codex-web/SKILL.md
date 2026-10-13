@@ -1,55 +1,36 @@
 ---
 name: chatgpt-codex-web
-description: Prepare paste-ready instructions for Codex Cloud web coding tasks, preserving repository and branch intent and distinguishing a created GitHub pull request from a Cloud UI handoff.
+description: Prepare paste-ready task instructions for the current Codex Cloud, preserving repository and PR-target intent and specifying a reviewable pull-request handoff.
 ---
 
 # ChatGPT to Codex Cloud
 
-Use this skill when preparing a self-contained task instruction that the user will hand to Codex Cloud on the web.
+Use this skill when preparing instructions that a user will paste into Codex Cloud.
 
-## Establish the task environment
+## Preserve task context
 
-Use the current Codex Cloud workflow by default: the user selects a published environment containing the intended GitHub repository, and each task runs in its own workspace.
-Treat Codex Cloud (Legacy) as a distinct workflow when the user explicitly uses it.
+Codex Cloud runs each task in a workspace of the selected published environment.
+Identify the requested change, target repository, starting revision, and governing repository instructions from available context.
+Include known constraints in the generated instruction; let the selected environment and repository instructions supply other task context.
 
-Before the handoff, identify any required repository, starting revision, PR target, and task restrictions from information already available.
-Include explicit values in the instruction when known; leave choices to the selected environment or repository instructions when they are optional.
-Ask for environment setup only when an actual prerequisite is missing.
-Environment creation, GitHub connection, and publication belong to Codex Cloud setup, not to every coding task.
+When the user specifies a PR target branch, carry it into the instruction.
+Otherwise follow the repository's governing PR-base instruction, or the GitHub default branch.
+Keep branch names optional when the task does not depend on a particular branch relationship.
 
-The Cloud environment and GitHub connection do not imply that the agent shell has `GH_TOKEN`, `gh`, a writable Git remote, or permission to create a PR.
-Require those facilities only when a task explicitly needs agent-side GitHub publishing and the environment provides them.
-When setup is required, explain the missing capability before producing instructions that depend on it.
+## Specify a reviewable outcome
 
-## Preserve repository and branch intent
+For repository changes, instruct Codex to:
 
-Carry known, task-relevant branch values explicitly:
+- implement the requested change in the selected repository;
+- run relevant validation and inspect the final diff;
+- report the resulting change and actual validation results;
+- when a PR is requested, prepare an accurate PR title and description, and identify the intended target branch;
+- leave the changes ready to review and open as a PR using the Codex Cloud task interface.
 
-- `source_branch`: the task's intended starting branch or revision;
-- `pr_base`: the branch targeted by the pull request;
-- `push_branch`: the remote head branch, if agent-side publishing is configured;
-- `push_remote`: the writable remote, if agent-side publishing is configured.
+Treat the PR as created only after its existence on GitHub is confirmed.
+If the PR still needs to be opened using the Cloud interface, state that this action remains for the user.
 
-Use a user-selected `pr_base` or repository-specific governing instruction; otherwise use the GitHub default branch.
-Do not infer the original branch from a temporary local checkout name such as `work`.
-When `push_branch` or `push_remote` is unnecessary for the selected Cloud workflow, omit it.
-Do not require the user to select optional branch or remote names.
+## Produce the handoff
 
-## Specify the pull-request outcome
-
-For repository-changing tasks, require implementation, relevant validation, and a reviewable final diff.
-
-If a pull request is requested, specify the expected publication outcome:
-
-- When the task has an authorized mechanism that creates or updates a real GitHub PR, use it, verify the resulting PR, and provide its URL.
-- Otherwise leave the validated changes available for review in the Codex Cloud task and provide a proposed PR title, body, and the explicit next step to create the PR through the Cloud UI.
-- Distinguish `PR created` from `PR not yet created`. A commit, push, `make_pr` description, or prepared PR text is not evidence of an existing PR.
-
-Do not instruct the agent to operate controls in the Cloud UI as if they were shell tools.
-If the user requires Codex itself to create the PR, state that authenticated GitHub publication capability must be available; do not silently replace that requirement with a user-action handoff.
-
-## Produce a directly usable instruction
-
-Output a complete instruction the user can paste into Codex Cloud as-is.
-Include the repository and branch constraints already known, the required change, relevant verification, and the PR completion or handoff rule.
-Do not substitute generic environment setup steps for task-specific instructions.
+Output a self-contained instruction ready to paste into Codex Cloud.
+Keep task-specific goals and constraints in the instruction, and keep environment setup separate from each coding task.
