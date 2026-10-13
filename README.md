@@ -38,9 +38,13 @@ Codex does not discover it automatically when working in an unrelated repository
 Install it into the Cloud environment's `$HOME/.agents/skills/codex-web-workflow/SKILL.md` during environment preparation, or install it as a repository-scoped skill under `.agents/skills/codex-web-workflow/SKILL.md` in the target repository.
 Repository-scoped skills are available in Cloud tasks; skills installed on a different local computer are not synced automatically.
 
-For an environment-level installation, retrieve the distribution file from:
+For an environment-level installation, run this during Cloud environment setup:
 
-`https://raw.githubusercontent.com/supersovaa/codex-web-workflow/main/skills/codex-web-workflow/SKILL.md`
+```sh
+skill_dir="$HOME/.agents/skills/codex-web-workflow"
+mkdir -p "$skill_dir"
+curl -fsSL https://raw.githubusercontent.com/supersovaa/codex-web-workflow/main/skills/codex-web-workflow/SKILL.md -o "$skill_dir/SKILL.md"
+```
 
 After preparing or updating an environment installation, publish or republish the environment and start a new task to use the prepared version.
 Keep the file in this repository as the distribution source rather than maintaining another independent copy.
