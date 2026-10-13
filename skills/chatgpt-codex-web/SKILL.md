@@ -1,36 +1,41 @@
 ---
 name: chatgpt-codex-web
-description: Prepare paste-ready task instructions for the current Codex Cloud, preserving repository and PR-target intent and specifying a reviewable pull-request handoff.
+description: Prepare self-contained Codex Cloud task instructions for repository changes that Codex must implement, validate, and publish as a real GitHub pull request.
 ---
 
 # ChatGPT to Codex Cloud
 
-Use this skill when preparing instructions that a user will paste into Codex Cloud.
+Use this skill when writing task instructions to paste into Codex Cloud.
 
 ## Preserve task context
 
-Codex Cloud runs each task in a workspace of the selected published environment.
-Identify the requested change, target repository, starting revision, and governing repository instructions from available context.
-Include known constraints in the generated instruction; let the selected environment and repository instructions supply other task context.
+Use the repository and published Cloud environment selected for the task.
+Carry known goals, constraints, starting revisions, and repository-specific instructions into the handoff.
 
-When the user specifies a PR target branch, carry it into the instruction.
-Otherwise follow the repository's governing PR-base instruction, or the GitHub default branch.
-Keep branch names optional when the task does not depend on a particular branch relationship.
+When a pull-request base is explicitly selected, preserve it.
+Otherwise use the governing repository instruction or the GitHub default branch.
+Leave optional branch names to Codex.
 
-## Specify a reviewable outcome
+## Require agent-side pull-request creation
 
-For repository changes, instruct Codex to:
+For repository-changing tasks, the instruction must make Codex responsible for implementing and validating the changes **and creating or updating the real GitHub pull request**.
+A pull-request creation step in the Codex Cloud interface that requires the user to act does not satisfy this requirement.
 
-- implement the requested change in the selected repository;
-- run relevant validation and inspect the final diff;
-- report the resulting change and actual validation results;
-- when a PR is requested, prepare an accurate PR title and description, and identify the intended target branch;
-- leave the changes ready to review and open as a PR using the Codex Cloud task interface.
+Require Codex to:
 
-Treat the PR as created only after its existence on GitHub is confirmed.
-If the PR still needs to be opened using the Cloud interface, state that this action remains for the user.
+1. Check that the active Cloud environment provides an authenticated GitHub publishing mechanism, access to the correct repository, and permission to push and create pull requests.
+2. Implement the requested change, run relevant validation, and inspect the final diff.
+3. Commit and publish the intended changes on a task-specific branch.
+4. Create or update the GitHub pull request with its resolved base branch and an accurate title and body.
+5. Verify the pull request exists and represents the final changes, and return its GitHub URL.
+
+If agent-side publication is unavailable, require Codex to report the concrete blocker and mark the requested outcome incomplete.
+A prepared PR description, a pushed branch, or a request for the user to open the PR is not task completion.
+
+Codex Cloud repository selection alone does not guarantee that the agent has GitHub write credentials or a PR creation tool.
+Treat those as environment prerequisites established before task execution, not as a choice to delegate PR creation to the user.
 
 ## Produce the handoff
 
-Output a self-contained instruction ready to paste into Codex Cloud.
-Keep task-specific goals and constraints in the instruction, and keep environment setup separate from each coding task.
+Output a complete instruction ready to paste into Codex Cloud without rewriting.
+Include the requested change, any known branch constraints, validation expectations, and the agent-created PR completion rule.
