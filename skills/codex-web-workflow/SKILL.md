@@ -1,97 +1,59 @@
 ---
 name: codex-web-workflow
-description: Execute repository-changing tasks reliably in Codex web by treating the local work branch as temporary, resolving pull-request branch names and the writable Git remote independently, pushing with git, and using GitHub CLI (`gh`) as the sole pull-request mechanism.
+description: Carry out repository-changing tasks in Codex Cloud, preserve the selected repository and branch context, and publish a verifiable GitHub PR when supported or hand off a reviewable diff to the Cloud PR UI.
 ---
 
-# Codex web workflow
+# Codex Cloud workflow
 
-Use this skill when executing repository-changing work in Codex web under the expected GitHub environment contract.
+Use this skill when performing repository-changing work in Codex Cloud on the web.
 
-## Environment assumptions
+## Resolve the active context
 
-Assume:
+Work in the repository and workspace selected for the task.
+Use explicitly supplied branch values and repository-specific governing instructions.
+When the PR base is otherwise unspecified, use the GitHub repository's default branch.
 
-- The repository is hosted on GitHub.com.
-- `git` is available.
-- GitHub CLI (`gh`) is installed.
-- `GH_TOKEN` is configured for GitHub CLI authentication.
-- The token can access the target repository.
-- The token has `Contents: Read and write`.
-- The token has `Pull requests: Read and write`.
-- At least one configured Git remote for the target repository is writable.
-- Network access required for GitHub operations is available.
+A local checkout may use a temporary name such as `work`.
+Treat that name as a local implementation detail rather than evidence of the original source branch or PR target.
+Use actual task selection and repository metadata for semantic branch roles.
 
-Treat these assumptions as execution prerequisites.
-Report an unmet prerequisite as soon as it blocks the workflow.
+Check which GitHub publication facilities are available in the active environment before depending on them.
+The Cloud connection does not by itself guarantee an authenticated `gh` session, `GH_TOKEN`, a writable remote, or direct PR-creation tools.
 
-## Treat `work` as a temporary local branch
+## Implement and validate
 
-Codex web may force the local checkout branch name to `work`.
-Treat `work` solely as a local implementation detail.
+Make the requested changes within the task's scope.
+Run relevant checks and inspect the final diff.
+Report validation that was actually performed, including any limitations.
+Prepare an accurate PR title and description from the final change and verification results when a PR is requested.
 
-Resolve semantic branch roles only from explicit task values, repository-specific governing instructions, and GitHub repository metadata.
+## Publish or hand off the PR
 
-When the task explicitly provides a branch value, use it.
+When an authenticated, authorized tool or command in the active environment can create or update a real GitHub pull request:
 
-When the pull-request base is omitted:
+1. Use the specified PR base, or resolve it from repository instructions and then GitHub metadata.
+2. Publish the intended final changes through the available mechanism.
+3. Verify the real PR exists on GitHub and corresponds to the final changes.
+4. Return its URL and state whether it is a draft.
 
-1. Use the repository-specific governing instruction when it defines a default pull-request base.
-2. Otherwise use the repository's GitHub default branch.
+When publication requires a user action in the Codex Cloud interface:
 
-When the remote push branch is omitted, choose a concise task-specific branch name.
+1. Keep the validated changes accessible in the current Cloud task for review.
+2. Supply the proposed PR title and body, the resolved target repository and base branch, and the next UI action (`Create PR` or `Create draft PR`, whichever is available).
+3. Explicitly report that the PR has not yet been created.
 
-Report missing branch information only when a required branch relationship remains unresolved after checking the task, repository instructions, and repository metadata.
+A `make_pr` output, commit, push, or PR description counts as a PR only if a real GitHub PR has been created and its existence verified.
+Do not claim that a user-only Cloud UI operation was performed by the agent.
+If an agent-created PR was explicitly required and no authorized publishing path is available, report the missing capability as an unmet requirement instead of marking that outcome complete.
 
-## Resolve the push remote independently
+## Optional command-line publication
 
-Treat the Git remote name as repository-local configuration.
+Use the command-line publishing path only when the active environment provides authenticated GitHub CLI access, network access, and a writable remote for the target repository.
 
-When the task or repository instructions explicitly provide the remote to use, use it.
-Otherwise choose a configured remote whose URL identifies the target GitHub repository and whose push URL is writable.
-If writable-remote resolution fails, report the missing writable remote as an unmet prerequisite.
+Resolve an explicitly supplied `push_remote` first; otherwise identify a configured writable remote for the correct GitHub repository.
+Resolve an explicitly supplied `push_branch` first; otherwise choose a concise task-specific remote branch name.
+Do not assume the remote is named `origin` or derive a semantic branch identity from a temporary local checkout name.
 
-## Pull requests are part of completion
-
-For tasks that modify the repository, a real GitHub pull request is part of the definition of done.
-
-Use only GitHub CLI (`gh`) to create or update the pull request.
-
-After completing and validating the requested changes:
-
-1. Commit the intended changes when needed.
-2. Push the current `HEAD` to the resolved remote and remote branch.
-3. Inspect the final diff and actual verification results.
-4. Generate the PR title and body from that final state.
-5. Create a new pull request or update the existing pull request with GitHub CLI.
-6. Verify that the pull request exists on GitHub and reflects the final diff.
-7. Obtain its URL.
-8. Include the URL in the final response.
-
-The PR title and body must describe the final implementation and actual verification results.
-
-Use an explicit remote and branch target so local checkout state and repository-local remote naming stay separate from the remote workflow:
-
-```sh
-git push -u <push_remote> HEAD:<push_branch>
-```
-
-Create a new pull request explicitly with the resolved head and base branches, title, and generated body:
-
-```sh
-gh pr create --head <push_branch> --base <pr_base> --title "<title>" --body-file <body_file>
-```
-
-If a pull request already exists for the branch, update its body and update its title when needed:
-
-```sh
-gh pr edit <number> --title "<title>" --body-file <body_file>
-```
-
-Report completion only after the pull request exists on GitHub, reflects the final diff, and its URL has been obtained.
-
-## Handle unmet prerequisites
-
-Keep the expected GitHub environment contract and pull-request mechanism fixed during execution.
-Keep repository changes scoped to the requested task.
-Treat authentication failure, insufficient permissions, writable-remote resolution failure, push failure, or pull-request creation failure as execution blockers.
-Report the concrete unmet prerequisite or failed GitHub operation.
+Commit the intended changes if needed, push the current HEAD to the resolved head branch, then create or update the PR with `gh` using explicit head and base branches.
+Verify the PR on GitHub and return its URL.
+If credentials, permissions, network access, the push, or PR creation fail, report the actual blocker.
