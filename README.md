@@ -36,7 +36,8 @@ A concrete supported setup uses GitHub CLI (`gh`) and Git authentication:
 - Provide authenticated GitHub access for the target repository. For a fine-grained personal access token, grant repository permissions **Contents: Read and write** and **Pull requests: Read and write**.
 - Supply the credential through the Cloud environment's personal vault or environment configuration (for `gh`, a suitable `GH_TOKEN` environment variable is one option). Do not commit the credential into the repository.
 - Allow the necessary GitHub HTTPS destinations (including `github.com` and `api.github.com`) in the Cloud environment network settings.
-- Verify that Codex can authenticate, push to an authorized head branch, and create a PR. Save and publish or republish the configured environment.
+- For HTTPS Git remotes, configure Git to use the authenticated CLI (for example, `gh auth setup-git`) and verify that both Git push and PR creation work.
+- Save and publish or republish the configured environment after testing access.
 
 This is a GitHub publishing capability for **current Codex Cloud tasks**, not a separate older-mode workflow.
 An alternative authenticated GitHub publishing tool may be used when it offers the same real PR creation, update, and verification capabilities.
@@ -48,7 +49,8 @@ The source definitions in this repository are:
 - `skills/chatgpt-codex-web/SKILL.md` for the ChatGPT-side instruction preparation workflow;
 - `skills/codex-web-workflow/SKILL.md` for Codex task execution.
 
-Use the first in a ChatGPT skill host that supports loading custom skill definitions; installing the second in Codex Cloud does not automatically load the first in ChatGPT.
+Load `chatgpt-codex-web` as a standalone skill in the ChatGPT desktop app, or bundle it in a plugin for use in ChatGPT Chat or Work. A GitHub-hosted `SKILL.md` is a distribution source, not automatic ChatGPT installation.
+Installing `codex-web-workflow` in Codex Cloud does not activate the ChatGPT-side skill.
 
 Install the Codex skill in the target repository at `.agents/skills/codex-web-workflow/SKILL.md`, or install it environment-wide at `$HOME/.agents/skills/codex-web-workflow/SKILL.md`.
 
