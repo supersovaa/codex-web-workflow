@@ -1,35 +1,40 @@
 ---
 name: codex-web-workflow
-description: Execute repository changes in the current Codex Cloud workspace, validate the resulting diff, and prepare a precise GitHub pull-request handoff through the Cloud task interface.
+description: Execute repository changes in Codex Cloud, validate them, and create or update a real GitHub pull request from the task using authenticated GitHub publishing capabilities.
 ---
 
 # Codex Cloud workflow
 
 Use this skill when executing a repository-changing task in Codex Cloud.
 
-## Follow the selected workspace
+## Confirm publication capability
 
-Work in the repository and task workspace selected by Codex Cloud.
-Follow explicit task constraints and repository-specific governing instructions.
+Use the repository and workspace selected for this task.
+Before implementation, confirm that the environment can authenticate to the correct GitHub repository, push changes, and create or update a pull request.
+Use the authenticated GitHub publishing mechanism configured for this Cloud environment.
 
-For a requested PR, use the explicitly specified target branch.
-Otherwise follow the repository's governing PR-base instruction, or use its GitHub default branch.
+A repository connected for checkout does not itself establish agent-side write access.
+When credentials, permission, network access, or a required publication tool is missing, report the unmet prerequisite as a blocker.
+Do not substitute a user-operated Cloud UI action for the required agent-created PR.
 
-## Implement and verify
+## Resolve the PR target
 
-Make the requested changes within scope.
-Run relevant checks and inspect the final diff.
-Summarize the actual changes, verification performed, and outstanding limitations.
+Use explicit task values and repository-specific governing instructions for branch choices.
+For an unspecified PR base, use the repository's governing instruction or its GitHub default branch.
+Publish the changes to a task-specific head branch rather than directly to the PR base branch.
 
-## Prepare the pull request
+## Implement and publish
 
-When a PR is requested:
+1. Implement the requested change within scope.
+2. Run relevant checks, inspect the final diff, and record actual verification results.
+3. Commit the intended changes and push the task-specific head branch.
+4. Generate the PR title and body from the final diff and actual verification.
+5. Create a new GitHub PR, or update the existing PR for the head branch, through the configured authenticated publishing mechanism.
+6. Verify the PR exists on GitHub, targets the resolved base branch, and includes the final changes.
+7. Report the PR URL with the changes and verification results.
 
-1. Prepare the proposed title and body from the final implementation and actual verification results.
-2. Identify the target repository and PR base branch.
-3. Leave the final change available for review in the Codex Cloud task.
-4. State that the next step is to review the change and open the PR using the Cloud task interface.
+When GitHub CLI is the configured publishing mechanism, use it for PR creation or updates with explicit repository, base, and head values.
+Resolve the remote from the configured repository rather than presuming a fixed remote name.
 
-A proposed title, body, commit, or diff is a reviewable result, not proof of a GitHub PR.
-Report a PR as created only when its existence on GitHub has been verified, and include its URL.
-If it still needs to be opened through the Cloud interface, report that status explicitly.
+Report a failed push or PR operation as an incomplete task with its concrete blocker.
+A commit, branch, or draft description alone does not satisfy PR creation.
