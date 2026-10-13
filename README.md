@@ -1,135 +1,79 @@
 # codex-web-workflow
 
-Skills for generating Codex web instructions in ChatGPT and executing them reliably in Codex, with explicit pull-request handling and branch and remote resolution independent of the local checkout name.
+Two lightweight skills for preparing and executing Codex Cloud changes **through creation of a real GitHub pull request by Codex**.
 
-## Why this exists
-
-Codex web has environment-specific behavior that can make otherwise reasonable instructions unreliable.
-In particular:
-
-- the checked-out local branch may be named `work`, so the original branch identity cannot be recovered from the local checkout name;
-- configured Git remote names are repository-local and cannot be assumed to use a fixed name such as `origin`;
-- preparing pull-request text is not the same as creating a real pull request;
-- `make_pr` can be mistaken for completion even when no pull request exists on GitHub;
-- GitHub authentication and permissions need to be defined before the Codex task starts.
-
-This repository splits those concerns into two small skills.
-
-## Skills
+## Skills and activation
 
 ### `chatgpt-codex-web`
 
-Use this on the ChatGPT side when preparing a task for Codex web.
-
-Its job is to:
-
-- define the expected Codex web environment;
-- explain the required `GH_TOKEN` permissions when asked;
-- preserve user-selected branch and remote information that Codex web cannot recover later without requiring optional names;
-- generate a complete instruction that can be pasted into Codex web without rewriting.
+Use in ChatGPT when preparing a complete task instruction for Codex Cloud.
+It preserves known repository and PR-target requirements and requires Codex to create the GitHub PR itself.
 
 ### `codex-web-workflow`
 
-Use this on the Codex side while executing the task.
+Use inside a Codex Cloud task when changing a repository.
+It checks publishing prerequisites, implements and validates the change, and creates or updates the real GitHub PR.
 
-Its job is to:
+The first skill prepares the task; the second executes it.
 
-- treat the local `work` branch as an implementation detail;
-- use branch and remote values explicitly supplied in the task when present;
-- resolve an omitted PR base from repository instructions or the GitHub default branch;
-- choose a task-specific remote branch name when none is supplied;
-- resolve a writable configured remote for the target GitHub repository when none is supplied;
-- push the current `HEAD` to the resolved remote and branch;
-- create a real GitHub pull request with `gh pr create`;
-- never use `make_pr`;
-- require a real pull-request URL before reporting completion.
+## Current Codex Cloud workflow
 
-## Installing `codex-web-workflow` for Codex web
+1. Select a published environment containing the target GitHub repository and the authenticated GitHub publishing capability described below.
+2. Start a task and have Codex implement and validate the requested changes.
+3. Have Codex commit and push a task-specific branch and create or update the GitHub PR.
+4. Verify the PR exists on GitHub and obtain its URL before reporting completion.
 
-The copy in this repository is the distribution source.
+The native Cloud interface also supports opening a PR manually, but that does not meet this repository's **Codex-created PR** completion contract.
 
-Codex does not discover `skills/codex-web-workflow/SKILL.md` from this repository while it is working in another repository.
-For a skill that should be available across repositories, install it into:
+## Configure GitHub publication in the Cloud environment
 
-```text
-$HOME/.agents/skills/codex-web-workflow/SKILL.md
-```
+Repository selection and checkout access alone do not guarantee that the task agent can push branches or create PRs.
+Provision agent-side GitHub publishing once in the published Cloud environment and verify it in a new task.
 
-In Codex web, the environment setup can install the current version from this repository:
+A concrete supported setup uses GitHub CLI (`gh`) and Git authentication:
+
+- Ensure `git` and `gh` are installed and available to the task.
+- Provide authenticated GitHub access for the target repository. For a fine-grained personal access token, grant repository permissions **Contents: Read and write** and **Pull requests: Read and write**.
+- Supply the credential through the Cloud environment's personal vault or environment configuration (for `gh`, a suitable `GH_TOKEN` environment variable is one option). Do not commit the credential into the repository.
+- Allow the necessary GitHub HTTPS destinations (including `github.com` and `api.github.com`) in the Cloud environment network settings.
+- For HTTPS Git remotes, configure Git to use the authenticated CLI (for example, `gh auth setup-git`) and verify that both Git push and PR creation work.
+- Save and publish or republish the configured environment after testing access.
+
+This is a GitHub publishing capability for **current Codex Cloud tasks**, not a separate older-mode workflow.
+An alternative authenticated GitHub publishing tool may be used when it offers the same real PR creation, update, and verification capabilities.
+
+## Install the skills
+
+The source definitions in this repository are:
+
+- `skills/chatgpt-codex-web/SKILL.md` for the ChatGPT-side instruction preparation workflow;
+- `skills/codex-web-workflow/SKILL.md` for Codex task execution.
+
+Load `chatgpt-codex-web` as a standalone skill in the ChatGPT desktop app, or bundle it in a plugin for use in ChatGPT Chat or Work. A GitHub-hosted `SKILL.md` is a distribution source, not automatic ChatGPT installation.
+Installing `codex-web-workflow` in Codex Cloud does not activate the ChatGPT-side skill.
+
+Install the Codex skill in the target repository at `.agents/skills/codex-web-workflow/SKILL.md`, or install it environment-wide at `$HOME/.agents/skills/codex-web-workflow/SKILL.md`.
+
+For the environment-wide option, run the following as part of Cloud environment preparation:
 
 ```sh
 skill_dir="$HOME/.agents/skills/codex-web-workflow"
-
 mkdir -p "$skill_dir"
-
-curl -fsSL \
-  https://raw.githubusercontent.com/supersovaa/codex-web-workflow/main/skills/codex-web-workflow/SKILL.md \
-  -o "$skill_dir/SKILL.md"
+curl -fsSL https://raw.githubusercontent.com/supersovaa/codex-web-workflow/main/skills/codex-web-workflow/SKILL.md -o "$skill_dir/SKILL.md"
 ```
 
-This keeps `skills/codex-web-workflow/SKILL.md` as the single source of truth while allowing the skill to continue changing during development.
-New Codex web environments will install the current version from `main`.
+Publish or republish the environment after changing its setup, then start a new task.
+Verify skill discovery by invoking `$codex-web-workflow` and requesting its PR completion rules without modifying the repository.
 
-Do not maintain a second copy of the skill under this repository's `.agents/skills`.
+## PR completion
 
-Before testing branch, push, or pull-request behavior, first verify that Codex can discover the installed skill.
+Codex must create or update a real pull request and verify that GitHub shows the final changes and intended base.
+The final answer must contain the GitHub PR URL.
+If authenticated publishing fails, report the concrete blocker and mark the requested result incomplete rather than hand PR creation to the user.
 
-For example:
+## References
 
-```text
-Use $codex-web-workflow.
-Do not modify the repository.
-Summarize the pull-request completion rules from the loaded skill.
-```
-
-## Expected environment
-
-The initial version assumes:
-
-- the repository is hosted on GitHub.com;
-- `git` is available;
-- GitHub CLI (`gh`) is installed;
-- `GH_TOKEN` is set;
-- `GH_TOKEN` is a fine-grained personal access token with access to the target repository;
-- the token has `Contents: Read and write`;
-- the token has `Pull requests: Read and write`;
-- network access required for GitHub operations is available;
-- at least one configured Git remote for the target repository is writable.
-
-If the task is expected to modify GitHub Actions workflow files, the environment may additionally require `Workflows: Read and write`.
-
-## Branch and remote model
-
-Instructions generated for Codex should distinguish these values when they matter:
-
-- `source_branch`: the branch or revision the work is based on;
-- `pr_base`: the target branch of the pull request;
-- `push_branch`: the remote branch that receives the Codex changes;
-- `push_remote`: the configured Git remote used to push the changes.
-
-Branch and remote names do not need to be supplied merely to allow PR creation.
-Explicitly supplied values take precedence.
-When `pr_base` is omitted, Codex uses repository-specific governing instructions when available and otherwise the GitHub default branch.
-When `push_branch` is omitted, Codex chooses a concise task-specific remote branch name.
-When `push_remote` is omitted, Codex resolves a configured writable remote whose URL identifies the target GitHub repository.
-
-Codex must not infer branch identity from the local branch name or assume a fixed Git remote name.
-
-## Pull-request completion rule
-
-A task that modifies the repository is not complete merely because the changes were committed or pushed.
-The pull request itself must exist on GitHub.
-
-The expected flow is conceptually:
-
-```sh
-git push -u <push_remote> HEAD:<push_branch>
-gh pr create --head <push_branch> --base <pr_base>
-```
-
-The final Codex response should include the resulting pull-request URL.
-
-## Status
-
-This is intentionally a small first version.
-The rules should be refined from real Codex web usage rather than expanded speculatively.
+- [Codex Cloud overview](https://learn.chatgpt.com/docs/cloud)
+- [Cloud environments](https://learn.chatgpt.com/docs/environments/cloud-environments)
+- [Build skills](https://learn.chatgpt.com/docs/build-skills)
+- [GitHub CLI: create a pull request](https://cli.github.com/manual/gh_pr_create)

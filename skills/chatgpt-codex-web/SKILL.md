@@ -1,96 +1,41 @@
 ---
 name: chatgpt-codex-web
-description: Prepare complete Codex web task instructions, including environment prerequisites, branch and remote-resolution rules, and pull-request requirements, so the generated instruction can be pasted into Codex web without rewriting.
+description: Prepare self-contained Codex Cloud task instructions for repository changes that Codex must implement, validate, and publish as a real GitHub pull request.
 ---
 
-# ChatGPT to Codex web
+# ChatGPT to Codex Cloud
 
-Use this skill when preparing instructions that a user intends to paste directly into Codex web.
+Use this skill when writing task instructions to paste into Codex Cloud.
 
-The generated instruction must be self-contained enough for Codex to execute without reconstructing information that Codex web discards or obscures.
+## Preserve task context
 
-## Environment contract
+Use the repository and published Cloud environment selected for the task.
+Carry known goals, constraints, starting revisions, and repository-specific instructions into the handoff.
 
-Assume the following Codex web environment unless the user specifies otherwise:
+When a pull-request base is explicitly selected, preserve it.
+Otherwise use the governing repository instruction or the GitHub default branch.
+Leave optional branch names to Codex.
 
-- The repository is hosted on GitHub.com.
-- `git` is available.
-- GitHub CLI (`gh`) is installed.
-- `GH_TOKEN` is configured.
-- `GH_TOKEN` is a fine-grained personal access token with access to the target repository.
-- The token has `Contents: Read and write`.
-- The token has `Pull requests: Read and write`.
-- At least one configured Git remote for the target repository is writable.
-- Network access required for GitHub operations is available.
+## Require agent-side pull-request creation
 
-If GitHub Actions workflow files must be modified, explain that the environment may additionally require `Workflows: Read and write`.
+For repository-changing tasks, the instruction must make Codex responsible for implementing and validating the changes **and creating or updating the real GitHub pull request**.
+A pull-request creation step in the Codex Cloud interface that requires the user to act does not satisfy this requirement.
 
-When the user asks how to configure the environment, answer from this contract instead of delegating environment design to Codex.
+Require Codex to:
 
-## Preserve branch and remote information before handoff
+1. Check that the active Cloud environment provides an authenticated GitHub publishing mechanism, access to the correct repository, and permission to push and create pull requests.
+2. Implement the requested change, run relevant validation, and inspect the final diff.
+3. Commit and publish the intended changes on a task-specific branch.
+4. Create or update the GitHub pull request with its resolved base branch and an accurate title and body.
+5. Verify the pull request exists and represents the final changes, and return its GitHub URL.
 
-Codex web may check out the working tree on a local branch named `work`.
-The local branch name therefore cannot be used to recover the user's original branch identity.
+If agent-side publication is unavailable, require Codex to report the concrete blocker and mark the requested outcome incomplete.
+A prepared PR description, a pushed branch, or a request for the user to open the PR is not task completion.
 
-When branch or remote identity matters and the relevant value is known or user-selected, include it explicitly in the generated instruction.
-Use these concepts:
+Codex Cloud repository selection alone does not guarantee that the agent has GitHub write credentials or a PR creation tool.
+Treat those as environment prerequisites established before task execution, not as a choice to delegate PR creation to the user.
 
-- `source_branch`: the branch or revision the task is based on;
-- `pr_base`: the target branch of the pull request;
-- `push_branch`: the remote branch to which Codex should push its changes;
-- `push_remote`: the configured Git remote used to push the change.
+## Produce the handoff
 
-Do not tell Codex to infer these values from:
-
-- `git branch --show-current`;
-- `git status`;
-- the local checkout branch name.
-
-Branch names are optional unless the task requires a specific branch relationship.
-When `pr_base` is omitted, let Codex resolve it from repository-specific governing instructions and then the GitHub default branch.
-When `push_branch` is omitted, let Codex choose a concise task-specific remote branch name.
-When `push_remote` is omitted, let Codex resolve a configured writable remote whose URL identifies the target GitHub repository.
-Do not ask the user to choose an otherwise optional branch or remote name.
-
-Do not tell Codex to assume that the remote is named `origin`.
-Do not tell Codex to construct the pull-request base from a fixed remote-tracking name such as `origin/<pr_base>`.
-
-## Generate a directly executable instruction
-
-The final Codex instruction should be ready to paste into Codex web as-is.
-Do not require the user to translate explanatory prose into operational steps.
-
-When repository changes are requested, include all of the following requirements in the Codex instruction:
-
-- Treat the local branch name `work` as an implementation detail.
-- Use any explicitly supplied branch or remote values.
-- Resolve an omitted `pr_base` from repository instructions, then the GitHub default branch.
-- Choose a concise task-specific `push_branch` when it is omitted.
-- Resolve an omitted `push_remote` from configured remotes for the target GitHub repository.
-- Never use `make_pr`.
-- Push the current `HEAD` to the resolved `push_remote` and `push_branch`.
-- Create the pull request with `gh pr create`.
-- Pass the resolved `--head <push_branch>` and `--base <pr_base>` explicitly.
-- Do not treat a commit, push, pull-request draft, or generated PR description as completion.
-- Verify that the pull request actually exists on GitHub.
-- Obtain the resulting pull-request URL.
-- Include the pull-request URL in the final response.
-
-Prefer this push pattern when the local branch is named `work`:
-
-```sh
-git push -u <push_remote> HEAD:<push_branch>
-```
-
-Prefer this pull-request pattern:
-
-```sh
-gh pr create --head <push_branch> --base <pr_base>
-```
-
-## Do not shift environment design to Codex
-
-The ChatGPT-side instruction is responsible for preserving information that will be unavailable or ambiguous after handoff.
-Do not generate instructions that ask Codex to decide what the GitHub token permissions should be, recover the original branch from `work`, invent a fixed Git remote name, or choose a substitute pull-request mechanism.
-
-If the expected environment contract is not suitable for the user's repository or task, explain the required environment change before generating the final Codex instruction.
+Output a complete instruction ready to paste into Codex Cloud without rewriting.
+Include the requested change, any known branch constraints, validation expectations, and the agent-created PR completion rule.
