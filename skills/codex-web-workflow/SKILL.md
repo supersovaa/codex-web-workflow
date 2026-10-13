@@ -1,59 +1,35 @@
 ---
 name: codex-web-workflow
-description: Carry out repository-changing tasks in Codex Cloud, preserve the selected repository and branch context, and publish a verifiable GitHub PR when supported or hand off a reviewable diff to the Cloud PR UI.
+description: Execute repository changes in the current Codex Cloud workspace, validate the resulting diff, and prepare a precise GitHub pull-request handoff through the Cloud task interface.
 ---
 
 # Codex Cloud workflow
 
-Use this skill when performing repository-changing work in Codex Cloud on the web.
+Use this skill when executing a repository-changing task in Codex Cloud.
 
-## Resolve the active context
+## Follow the selected workspace
 
-Work in the repository and workspace selected for the task.
-Use explicitly supplied branch values and repository-specific governing instructions.
-When the PR base is otherwise unspecified, use the GitHub repository's default branch.
+Work in the repository and task workspace selected by Codex Cloud.
+Follow explicit task constraints and repository-specific governing instructions.
 
-A local checkout may use a temporary name such as `work`.
-Treat that name as a local implementation detail rather than evidence of the original source branch or PR target.
-Use actual task selection and repository metadata for semantic branch roles.
+For a requested PR, use the explicitly specified target branch.
+Otherwise follow the repository's governing PR-base instruction, or use its GitHub default branch.
 
-Check which GitHub publication facilities are available in the active environment before depending on them.
-The Cloud connection does not by itself guarantee an authenticated `gh` session, `GH_TOKEN`, a writable remote, or direct PR-creation tools.
+## Implement and verify
 
-## Implement and validate
-
-Make the requested changes within the task's scope.
+Make the requested changes within scope.
 Run relevant checks and inspect the final diff.
-Report validation that was actually performed, including any limitations.
-Prepare an accurate PR title and description from the final change and verification results when a PR is requested.
+Summarize the actual changes, verification performed, and outstanding limitations.
 
-## Publish or hand off the PR
+## Prepare the pull request
 
-When an authenticated, authorized tool or command in the active environment can create or update a real GitHub pull request:
+When a PR is requested:
 
-1. Use the specified PR base, or resolve it from repository instructions and then GitHub metadata.
-2. Publish the intended final changes through the available mechanism.
-3. Verify the real PR exists on GitHub and corresponds to the final changes.
-4. Return its URL and state whether it is a draft.
+1. Prepare the proposed title and body from the final implementation and actual verification results.
+2. Identify the target repository and PR base branch.
+3. Leave the final change available for review in the Codex Cloud task.
+4. State that the next step is to review the change and open the PR using the Cloud task interface.
 
-When publication requires a user action in the Codex Cloud interface:
-
-1. Keep the validated changes accessible in the current Cloud task for review.
-2. Supply the proposed PR title and body, the resolved target repository and base branch, and the next UI action (`Create PR` or `Create draft PR`, whichever is available).
-3. Explicitly report that the PR has not yet been created.
-
-A `make_pr` output, commit, push, or PR description counts as a PR only if a real GitHub PR has been created and its existence verified.
-Do not claim that a user-only Cloud UI operation was performed by the agent.
-If an agent-created PR was explicitly required and no authorized publishing path is available, report the missing capability as an unmet requirement instead of marking that outcome complete.
-
-## Optional command-line publication
-
-Use the command-line publishing path only when the active environment provides authenticated GitHub CLI access, network access, and a writable remote for the target repository.
-
-Resolve an explicitly supplied `push_remote` first; otherwise identify a configured writable remote for the correct GitHub repository.
-Resolve an explicitly supplied `push_branch` first; otherwise choose a concise task-specific remote branch name.
-Do not assume the remote is named `origin` or derive a semantic branch identity from a temporary local checkout name.
-
-Commit the intended changes if needed, push the current HEAD to the resolved head branch, then create or update the PR with `gh` using explicit head and base branches.
-Verify the PR on GitHub and return its URL.
-If credentials, permissions, network access, the push, or PR creation fail, report the actual blocker.
+A proposed title, body, commit, or diff is a reviewable result, not proof of a GitHub PR.
+Report a PR as created only when its existence on GitHub has been verified, and include its URL.
+If it still needs to be opened through the Cloud interface, report that status explicitly.
