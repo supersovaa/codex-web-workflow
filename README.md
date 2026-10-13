@@ -1,44 +1,37 @@
 # codex-web-workflow
 
-Two lightweight skills for handing tasks from ChatGPT to Codex Cloud and completing repository changes with an accurate GitHub pull-request outcome.
+Two lightweight skills for preparing and executing repository changes in the current Codex Cloud workflow.
 
-## Skills
+## Skills and activation
 
 ### `chatgpt-codex-web`
 
-Use in ChatGPT when writing a self-contained instruction to paste into Codex Cloud.
-It carries known repository and branch constraints into the task and states whether PR publication must happen inside the agent or can be completed through the Cloud interface.
+Use in ChatGPT when preparing a task instruction that will be pasted into Codex Cloud.
+It preserves known repository, branch, and outcome requirements and produces a self-contained handoff.
 
 ### `codex-web-workflow`
 
-Use in Codex Cloud when implementing repository changes.
-It validates the final diff, uses an authenticated PR-publishing capability if one is available, and otherwise hands a reviewable result to the native Cloud PR controls without reporting an uncreated PR as complete.
+Use inside a Codex Cloud task when changing a repository.
+It validates the result and prepares a precise PR handoff through the Cloud task interface.
 
 The two skills separate instruction preparation from task execution.
 
-## Current Codex Cloud workflow
+## Workflow
 
-1. Connect the intended GitHub repository and create or select a Codex Cloud environment.
-2. Prepare and test the environment, then **Publish** it.
-3. Start a task from that environment; each task receives an isolated workspace.
-4. Review changes and verification in the task.
-5. Create or update a real GitHub PR through an authorized capability, or use the Cloud UI's PR action after the task.
+1. Select a published Codex Cloud environment containing the target repository.
+2. Start a task in that environment and execute the requested changes.
+3. Review the final diff and validation results.
+4. Open a GitHub pull request from the Cloud task interface when ready.
 
-Codex Cloud (Legacy) remains a separate experience for supported integration workflows.
-Do not assume legacy shell, authentication, branch, or PR behavior applies to the current Cloud experience.
+PR creation is complete only when the PR exists on GitHub.
+Until then, the task should give the proposed title, description, target branch, and remaining Cloud UI action rather than claim that a PR exists.
 
-A configured GitHub connection is not proof that `gh`, `GH_TOKEN`, or a writable Git remote exists in the agent shell.
-Those are optional prerequisites for a specifically configured command-line publishing path, not the default Cloud task contract.
+## Install the Codex skill
 
-## Install `codex-web-workflow` in Codex Cloud
+This repository publishes `skills/codex-web-workflow/SKILL.md` as the source skill definition.
+Install it into the target repository at `.agents/skills/codex-web-workflow/SKILL.md` for repository-scoped use, or into the Codex Cloud environment's `$HOME/.agents/skills/codex-web-workflow/SKILL.md` for environment-wide use.
 
-The published skill source is `skills/codex-web-workflow/SKILL.md` in this repository.
-Codex does not discover it automatically when working in an unrelated repository.
-
-Install it into the Cloud environment's `$HOME/.agents/skills/codex-web-workflow/SKILL.md` during environment preparation, or install it as a repository-scoped skill under `.agents/skills/codex-web-workflow/SKILL.md` in the target repository.
-Repository-scoped skills are available in Cloud tasks; skills installed on a different local computer are not synced automatically.
-
-For an environment-level installation, run this during Cloud environment setup:
+For an environment-level installation, add this to the Cloud environment setup:
 
 ```sh
 skill_dir="$HOME/.agents/skills/codex-web-workflow"
@@ -46,29 +39,10 @@ mkdir -p "$skill_dir"
 curl -fsSL https://raw.githubusercontent.com/supersovaa/codex-web-workflow/main/skills/codex-web-workflow/SKILL.md -o "$skill_dir/SKILL.md"
 ```
 
-After preparing or updating an environment installation, publish or republish the environment and start a new task to use the prepared version.
-Keep the file in this repository as the distribution source rather than maintaining another independent copy.
+Publish or republish the environment after changing its setup, then start a new task.
+Confirm skill discovery by invoking `$codex-web-workflow` and asking it to summarize its PR handoff rules without modifying a repository.
 
-Before testing publication behavior, confirm the skill is discoverable in the Cloud task.
-For example, invoke `$codex-web-workflow` and request a summary of its PR completion rules without modifying the repository.
-
-## Branch and PR rules
-
-Branch values have distinct roles:
-
-- `source_branch`: intended starting branch or revision;
-- `pr_base`: target branch for the PR;
-- `push_branch`: remote head branch when command-line publishing is used;
-- `push_remote`: writable Git remote when command-line publishing is used.
-
-An explicitly selected value takes precedence.
-Use repository-specific governing instructions for a missing PR base, otherwise the GitHub default branch.
-A temporary local branch name such as `work` is not a reliable source for recovering the original branch identity.
-Neither remote names nor push-branch names need to be supplied for the native Cloud PR workflow.
-
-A completed PR must exist on GitHub and have a verifiable URL.
-If a PR still requires a Cloud UI action, the task should report **PR not yet created** and provide the proposed title, body, target base, and next action.
-A prepared `make_pr` description alone is not proof of PR creation.
+The ChatGPT-side `chatgpt-codex-web` skill is intended for preparing the task before handing it to Codex Cloud.
 
 ## References
 
