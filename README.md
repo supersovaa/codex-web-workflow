@@ -9,6 +9,7 @@ These skills addressed limitations of the former Codex Web workflow. With Codex 
 The skill definitions and historical instructions below are preserved for reference only. They are not recommended for new installations.
 
 ---
+
 Skills for generating Codex web instructions in ChatGPT and executing them reliably in Codex, with explicit pull-request handling and branch and remote resolution independent of the local checkout name.
 
 ## Why this exists
